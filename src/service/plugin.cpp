@@ -1,36 +1,29 @@
-// SPDX-FileCopyrightText: 2021 - 2023 UnionTech Software Technology Co., Ltd.
+// SPDX-FileCopyrightText: 2023 UnionTech Software Technology Co., Ltd.
 //
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "appearance1adaptor.h"
 #include "dbus/appearance1.h"
 #include "modules/common/commondefine.h"
+#include <QCoreApplication>
 
-#include <DLog>
+static Appearance1 *appearance = nullptr;
 
-#include <QGuiApplication>
-
-using Dtk::Core::DLogManager;
-
-int main(int argc, char *argv[])
+extern "C" int DSMRegister(const char *name, void *data)
 {
-    QGuiApplication app(argc, argv);
-    app.setOrganizationName("deepin");
-    app.setApplicationName("org.deepin.dde.appearance");
+    (void)name;
+    (void)data;
+
     QTranslator translator;
     QString languagePath = QStandardPaths::locate(QStandardPaths::GenericDataLocation,
                                                   QString("dde-appearance/translations"),
                                                   QStandardPaths::LocateDirectory);
     translator.load(languagePath+"/dde-appearance_" + QLocale::system().name());
-    app.installTranslator(&translator);
+    qApp->installTranslator(&translator);
 
-    DLogManager::registerJournalAppender();
-    DLogManager::registerConsoleAppender();
-
-    Appearance1 *appearance = new Appearance1();
+    appearance = new Appearance1();
 
     new Appearance1Adaptor(appearance);
-
     bool appearanceRegister = APPEARANCEDBUS.registerService(APPEARANCE_SERVICE);
     bool appearanceObjectRegister = APPEARANCEDBUS.registerObject(APPEARANCE_PATH, APPEARANCE_INTERFACE, appearance);
 
@@ -38,6 +31,18 @@ int main(int argc, char *argv[])
         qWarning() << "appearance dbus service already registered";
         return -1;
     }
+    return 0;
+}
 
-    return app.exec();
+// 该函数用于资源释放
+// 非常驻插件必须实现该函数，以防内存泄漏
+extern "C" int DSMUnRegister(const char *name, void *data)
+{
+    (void)name;
+    (void)data;
+    if (appearance) {
+        appearance->deleteLater();
+    }
+    appearance = nullptr;
+    return 0;
 }

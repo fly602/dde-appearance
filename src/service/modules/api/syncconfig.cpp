@@ -13,8 +13,8 @@ SyncConfig::SyncConfig(QString name, QString path)
     : name(name)
     , path(path)
 {
-    QDBusConnection::sessionBus().registerObject(path, this, QDBusConnection::ExportNonScriptableSlots);
-    QDBusConnection::sessionBus().connect("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameOwnerChanged", this, SLOT(handleNameOwnerChanged(QString, QString, QString)));
+    APPEARANCEDBUS.registerObject(path, this, QDBusConnection::ExportNonScriptableSlots);
+    APPEARANCEDBUS.connect("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameOwnerChanged", this, SLOT(handleNameOwnerChanged(QString, QString, QString)));
     registerConfig();
 }
 
